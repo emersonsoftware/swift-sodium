@@ -8,15 +8,15 @@
 
 import Foundation
 
-public class Sodium {
-    public var box = Box()
-    public var secretBox = SecretBox()
-    public var genericHash = GenericHash()
-    public var pwHash = PWHash()
-    public var randomBytes = RandomBytes()
-    public var shortHash = ShortHash()
-    public var sign = Sign()
-    public var utils = Utils()
+open class Sodium {
+    open var box = Box()
+    open var secretBox = SecretBox()
+    open var genericHash = GenericHash()
+    open var pwHash = PWHash()
+    open var randomBytes = RandomBytes()
+    open var shortHash = ShortHash()
+    open var sign = Sign()
+    open var utils = Utils()
     
     public init?() {
         struct Once {

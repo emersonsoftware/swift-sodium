@@ -8,20 +8,20 @@
 
 import Foundation
 
-public class ShortHash {
-    public let Bytes = Int(crypto_shorthash_bytes())
-    public let KeyBytes = Int(crypto_shorthash_keybytes())
+open class ShortHash {
+    open let Bytes = Int(crypto_shorthash_bytes())
+    open let KeyBytes = Int(crypto_shorthash_keybytes())
     
-    public func hash(message: NSData, key: NSData) -> NSData? {
-        if key.length != KeyBytes {
+    open func hash(_ message: Data, key: Data) -> Data? {
+        if key.count != KeyBytes {
             return nil
         }
         guard let output = NSMutableData(length: Bytes) else {
             return nil
         }
-        if crypto_shorthash(output.mutableBytesPtr(), message.bytesPtr(), CUnsignedLongLong(message.length), key.bytesPtr()) != 0 {
+        if crypto_shorthash(output.mutableBytesPtr(), message.bytesPtr(), CUnsignedLongLong(message.count), key.bytesPtr()) != 0 {
             return nil
         }
-        return output
+        return output as Data
     }
 }

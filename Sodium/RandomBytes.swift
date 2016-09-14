@@ -8,8 +8,8 @@
 
 import Foundation
 
-public class RandomBytes {
-    public func buf(length: Int) -> NSData? {
+open class RandomBytes {
+    open func buf(_ length: Int) -> Data? {
         if length < 0 {
             return nil
         }
@@ -17,14 +17,14 @@ public class RandomBytes {
             return nil
         }
         randombytes_buf(output.mutableBytesPtr(), output.length)
-        return output
+        return output as Data
     }
     
-    public func random() -> UInt32 {
+    open func random() -> UInt32 {
         return randombytes_random()
     }
     
-    public func uniform(upperBound: UInt32) -> UInt32 {
+    open func uniform(_ upperBound: UInt32) -> UInt32 {
         return randombytes_uniform(upperBound)
     }
 }

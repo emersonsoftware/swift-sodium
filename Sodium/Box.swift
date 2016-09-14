@@ -8,21 +8,21 @@
 
 import Foundation
 
-public class Box {
-    public let SeedBytes = Int(crypto_box_seedbytes())
-    public let PublicKeyBytes = Int(crypto_box_publickeybytes())
-    public let SecretKeyBytes = Int(crypto_box_secretkeybytes())
-    public let NonceBytes = Int(crypto_box_noncebytes())
-    public let MacBytes = Int(crypto_box_macbytes())
-    public let Primitive = String.init(validatingUTF8:crypto_box_primitive())
-    public let BeforenmBytes = Int(crypto_box_beforenmbytes())
-    public let SealBytes = Int(crypto_box_sealbytes())
+open class Box {
+    open let SeedBytes = Int(crypto_box_seedbytes())
+    open let PublicKeyBytes = Int(crypto_box_publickeybytes())
+    open let SecretKeyBytes = Int(crypto_box_secretkeybytes())
+    open let NonceBytes = Int(crypto_box_noncebytes())
+    open let MacBytes = Int(crypto_box_macbytes())
+    open let Primitive = String.init(validatingUTF8:crypto_box_primitive())
+    open let BeforenmBytes = Int(crypto_box_beforenmbytes())
+    open let SealBytes = Int(crypto_box_sealbytes())
     
-    public typealias PublicKey = NSData
-    public typealias SecretKey = NSData
-    public typealias Nonce = NSData
-    public typealias MAC = NSData
-    public typealias Beforenm = NSData
+    public typealias PublicKey = Data
+    public typealias SecretKey = Data
+    public typealias Nonce = Data
+    public typealias MAC = Data
+    public typealias Beforenm = Data
 
     public struct KeyPair {
         public let publicKey: PublicKey
@@ -34,7 +34,7 @@ public class Box {
         }
     }
     
-    public func keyPair() -> KeyPair? {
+    open func keyPair() -> KeyPair? {
         guard let pk = NSMutableData(length: PublicKeyBytes) else {
             return nil
         }
@@ -44,11 +44,11 @@ public class Box {
         if crypto_box_keypair(pk.mutableBytesPtr(), sk.mutableBytesPtr()) != 0 {
             return nil
         }
-        return KeyPair(publicKey: PublicKey(data: pk as Data), secretKey: SecretKey(data: sk as Data))
+        return KeyPair(publicKey: pk as PublicKey, secretKey: sk as SecretKey)
     }
     
-    public func keyPair(seed: NSData) -> KeyPair? {
-        if seed.length != SeedBytes {
+    open func keyPair(_ seed: Data) -> KeyPair? {
+        if seed.count != SeedBytes {
             return nil
         }
         guard let pk = NSMutableData(length: PublicKeyBytes) else {
@@ -60,10 +60,10 @@ public class Box {
         if crypto_box_seed_keypair(pk.mutableBytesPtr(), sk.mutableBytesPtr(), seed.bytesPtr()) != 0 {
             return nil
         }
-        return KeyPair(publicKey: PublicKey(data: pk as Data), secretKey: SecretKey(data: sk as Data))
+        return KeyPair(publicKey: pk as PublicKey, secretKey: sk as SecretKey)
     }
     
-    public func nonce() -> Nonce? {
+    open func nonce() -> Nonce? {
         guard let nonce = NSMutableData(length: NonceBytes) else {
             return nil
         }
@@ -71,36 +71,36 @@ public class Box {
         return nonce as Nonce
     }
     
-    public func seal(message: NSData, recipientPublicKey: PublicKey, senderSecretKey: SecretKey) -> NSData? {
-        guard let (authenticatedCipherText, nonce): (NSData, Nonce) = seal(message: message, recipientPublicKey: recipientPublicKey, senderSecretKey: senderSecretKey) else {
+    open func seal(_ message: Data, recipientPublicKey: PublicKey, senderSecretKey: SecretKey) -> Data? {
+        guard let (authenticatedCipherText, nonce): (Data, Nonce) = seal(message, recipientPublicKey: recipientPublicKey, senderSecretKey: senderSecretKey) else {
             return nil
         }
         let nonceAndAuthenticatedCipherText = NSMutableData(data: nonce as Data)
         nonceAndAuthenticatedCipherText.append(authenticatedCipherText as Data)
-        return nonceAndAuthenticatedCipherText
+        return nonceAndAuthenticatedCipherText as Data
     }
     
-    public func seal(message: NSData, recipientPublicKey: PublicKey, senderSecretKey: SecretKey) -> (authenticatedCipherText: NSData, nonce: Nonce)? {
-        if recipientPublicKey.length != PublicKeyBytes || senderSecretKey.length != SecretKeyBytes {
+    open func seal(_ message: Data, recipientPublicKey: PublicKey, senderSecretKey: SecretKey) -> (authenticatedCipherText: Data, nonce: Nonce)? {
+        if recipientPublicKey.count != PublicKeyBytes || senderSecretKey.count != SecretKeyBytes {
             return nil
         }
-        guard let authenticatedCipherText = NSMutableData(length: message.length + MacBytes) else {
+        guard let authenticatedCipherText = NSMutableData(length: message.count + MacBytes) else {
             return nil
         }
         guard let nonce = self.nonce() else {
             return nil
         }
-        if crypto_box_easy(authenticatedCipherText.mutableBytesPtr(), message.bytesPtr(), CUnsignedLongLong(message.length), nonce.bytesPtr(), recipientPublicKey.bytesPtr(), senderSecretKey.bytesPtr()) != 0 {
+        if crypto_box_easy(authenticatedCipherText.mutableBytesPtr(), message.bytesPtr(), CUnsignedLongLong(message.count), nonce.bytesPtr(), recipientPublicKey.bytesPtr(), senderSecretKey.bytesPtr()) != 0 {
             return nil
         }
-        return (authenticatedCipherText: authenticatedCipherText, nonce: nonce)
+        return (authenticatedCipherText: authenticatedCipherText as Data, nonce: nonce)
     }
 
-    public func seal(message: NSData, recipientPublicKey: PublicKey, senderSecretKey: SecretKey) -> (authenticatedCipherText: NSData, nonce: Nonce, mac: MAC)? {
-        if recipientPublicKey.length != PublicKeyBytes || senderSecretKey.length != SecretKeyBytes {
+    open func seal(_ message: Data, recipientPublicKey: PublicKey, senderSecretKey: SecretKey) -> (authenticatedCipherText: Data, nonce: Nonce, mac: MAC)? {
+        if recipientPublicKey.count != PublicKeyBytes || senderSecretKey.count != SecretKeyBytes {
             return nil
         }
-        guard let authenticatedCipherText = NSMutableData(length: message.length) else {
+        guard let authenticatedCipherText = NSMutableData(length: message.count) else {
             return nil
         }
         guard let mac = NSMutableData(length: MacBytes) else {
@@ -109,135 +109,135 @@ public class Box {
         guard let nonce = self.nonce() else {
             return nil
         }
-        if crypto_box_detached(authenticatedCipherText.mutableBytesPtr(), mac.mutableBytesPtr(), message.bytesPtr(), CUnsignedLongLong(message.length), nonce.bytesPtr(), recipientPublicKey.bytesPtr(), senderSecretKey.bytesPtr()) != 0 {
+        if crypto_box_detached(authenticatedCipherText.mutableBytesPtr(), mac.mutableBytesPtr(), message.bytesPtr(), CUnsignedLongLong(message.count), nonce.bytesPtr(), recipientPublicKey.bytesPtr(), senderSecretKey.bytesPtr()) != 0 {
             return nil
         }
-        return (authenticatedCipherText: authenticatedCipherText, nonce: nonce as Nonce, mac: mac as MAC)
+        return (authenticatedCipherText: authenticatedCipherText as Data, nonce: nonce as Nonce, mac: mac as MAC)
     }
     
-    public func open(nonceAndAuthenticatedCipherText: NSData, senderPublicKey: PublicKey, recipientSecretKey: SecretKey) -> NSData? {
-        if nonceAndAuthenticatedCipherText.length < NonceBytes + MacBytes {
+    open func open(_ nonceAndAuthenticatedCipherText: Data, senderPublicKey: PublicKey, recipientSecretKey: SecretKey) -> Data? {
+        if nonceAndAuthenticatedCipherText.count < NonceBytes + MacBytes {
             return nil
         }
-        let nonce = nonceAndAuthenticatedCipherText.subdata(with: NSRange(0..<NonceBytes)) as Nonce
-        let authenticatedCipherText = nonceAndAuthenticatedCipherText.subdata(with: NSRange(NonceBytes..<nonceAndAuthenticatedCipherText.length)) as NSData
-        return open(authenticatedCipherText: authenticatedCipherText, senderPublicKey: senderPublicKey, recipientSecretKey: recipientSecretKey, nonce: nonce)
+        let nonce = nonceAndAuthenticatedCipherText.subdata(in: 0..<NonceBytes as Range<Int>) as Nonce
+        let authenticatedCipherText = nonceAndAuthenticatedCipherText.subdata(in: NonceBytes..<nonceAndAuthenticatedCipherText.count as Range<Int>) as Data
+        return open(authenticatedCipherText, senderPublicKey: senderPublicKey, recipientSecretKey: recipientSecretKey, nonce: nonce)
     }
     
-    public func open(authenticatedCipherText: NSData, senderPublicKey: PublicKey, recipientSecretKey: SecretKey, nonce: Nonce) -> NSData? {
-        if nonce.length != NonceBytes || authenticatedCipherText.length < MacBytes {
+    open func open(_ authenticatedCipherText: Data, senderPublicKey: PublicKey, recipientSecretKey: SecretKey, nonce: Nonce) -> Data? {
+        if nonce.count != NonceBytes || authenticatedCipherText.count < MacBytes {
             return nil
         }
-        if senderPublicKey.length != PublicKeyBytes || recipientSecretKey.length != SecretKeyBytes {
+        if senderPublicKey.count != PublicKeyBytes || recipientSecretKey.count != SecretKeyBytes {
             return nil
         }
-        guard let message = NSMutableData(length: authenticatedCipherText.length - MacBytes) else {
+        guard let message = NSMutableData(length: authenticatedCipherText.count - MacBytes) else {
             return nil
         }
-        if crypto_box_open_easy(message.mutableBytesPtr(), authenticatedCipherText.bytesPtr(), CUnsignedLongLong(authenticatedCipherText.length), nonce.bytesPtr(), senderPublicKey.bytesPtr(), recipientSecretKey.bytesPtr()) != 0 {
+        if crypto_box_open_easy(message.mutableBytesPtr(), authenticatedCipherText.bytesPtr(), CUnsignedLongLong(authenticatedCipherText.count), nonce.bytesPtr(), senderPublicKey.bytesPtr(), recipientSecretKey.bytesPtr()) != 0 {
             return nil
         }
-        return message
+        return message as Data
     }
     
-    public func open(authenticatedCipherText: NSData, senderPublicKey: PublicKey, recipientSecretKey: SecretKey, nonce: Nonce, mac: MAC) -> NSData? {
-        if nonce.length != NonceBytes || mac.length != MacBytes {
+    open func open(_ authenticatedCipherText: Data, senderPublicKey: PublicKey, recipientSecretKey: SecretKey, nonce: Nonce, mac: MAC) -> Data? {
+        if nonce.count != NonceBytes || mac.count != MacBytes {
             return nil
         }
-        if senderPublicKey.length != PublicKeyBytes || recipientSecretKey.length != SecretKeyBytes {
+        if senderPublicKey.count != PublicKeyBytes || recipientSecretKey.count != SecretKeyBytes {
             return nil
         }
-        guard let message = NSMutableData(length: authenticatedCipherText.length) else {
+        guard let message = NSMutableData(length: authenticatedCipherText.count) else {
             return nil
         }
-        if crypto_box_open_detached(message.mutableBytesPtr(), authenticatedCipherText.bytesPtr(), mac.bytesPtr(), CUnsignedLongLong(authenticatedCipherText.length), nonce.bytesPtr(), senderPublicKey.bytesPtr(), recipientSecretKey.bytesPtr()) != 0 {
+        if crypto_box_open_detached(message.mutableBytesPtr(), authenticatedCipherText.bytesPtr(), mac.bytesPtr(), CUnsignedLongLong(authenticatedCipherText.count), nonce.bytesPtr(), senderPublicKey.bytesPtr(), recipientSecretKey.bytesPtr()) != 0 {
             return nil
         }
-        return message
+        return message as Data
     }
     
-    public func beforenm(recipientPublicKey: PublicKey, senderSecretKey: SecretKey) -> NSData? {
+    open func beforenm(_ recipientPublicKey: PublicKey, senderSecretKey: SecretKey) -> Data? {
         let key = NSMutableData(length: BeforenmBytes)
         if crypto_box_beforenm(key!.mutableBytesPtr(), recipientPublicKey.bytesPtr(), senderSecretKey.bytesPtr()) != 0 {
             return nil
         }
-        return key
+        return key as Data?
     }
     
-    public func seal(message: NSData, beforenm: Beforenm) -> (authenticatedCipherText: NSData, nonce: Nonce)? {
-        if beforenm.length != BeforenmBytes {
+    open func seal(_ message: Data, beforenm: Beforenm) -> (authenticatedCipherText: Data, nonce: Nonce)? {
+        if beforenm.count != BeforenmBytes {
             return nil
         }
-        guard let authenticatedCipherText = NSMutableData(length: message.length + MacBytes) else {
+        guard let authenticatedCipherText = NSMutableData(length: message.count + MacBytes) else {
             return nil
         }
         guard let nonce = self.nonce() else {
             return nil
         }
-        if crypto_box_easy_afternm(authenticatedCipherText.mutableBytesPtr(), message.bytesPtr(), CUnsignedLongLong(message.length), nonce.bytesPtr(), beforenm.bytesPtr()) != 0 {
+        if crypto_box_easy_afternm(authenticatedCipherText.mutableBytesPtr(), message.bytesPtr(), CUnsignedLongLong(message.count), nonce.bytesPtr(), beforenm.bytesPtr()) != 0 {
             return nil
         }
-        return (authenticatedCipherText: authenticatedCipherText, nonce: nonce)
+        return (authenticatedCipherText: authenticatedCipherText as Data, nonce: nonce)
     }
     
-    public func open(nonceAndAuthenticatedCipherText: NSData, beforenm: Beforenm) -> NSData? {
-        if nonceAndAuthenticatedCipherText.length < NonceBytes + MacBytes {
+    open func open(_ nonceAndAuthenticatedCipherText: Data, beforenm: Beforenm) -> Data? {
+        if nonceAndAuthenticatedCipherText.count < NonceBytes + MacBytes {
             return nil
         }
-        let nonce = nonceAndAuthenticatedCipherText.subdata(with: NSRange(0..<NonceBytes)) as Nonce
-        let authenticatedCipherText = nonceAndAuthenticatedCipherText.subdata(with: NSRange(NonceBytes..<nonceAndAuthenticatedCipherText.length)) as NSData
-        return  open(authenticatedCipherText: authenticatedCipherText, beforenm: beforenm, nonce: nonce)
+        let nonce = nonceAndAuthenticatedCipherText.subdata(in: 0..<NonceBytes as Range<Int>) as Nonce
+        let authenticatedCipherText = nonceAndAuthenticatedCipherText.subdata(in: NonceBytes..<nonceAndAuthenticatedCipherText.count as Range<Int>) as Data
+        return  open(authenticatedCipherText, beforenm: beforenm, nonce: nonce)
     }
 
-    public func open(authenticatedCipherText: NSData, beforenm: Beforenm, nonce: Nonce) -> NSData? {
-        if nonce.length != NonceBytes || authenticatedCipherText.length < MacBytes {
+    open func open(_ authenticatedCipherText: Data, beforenm: Beforenm, nonce: Nonce) -> Data? {
+        if nonce.count != NonceBytes || authenticatedCipherText.count < MacBytes {
             return nil
         }
-        if beforenm.length != BeforenmBytes {
+        if beforenm.count != BeforenmBytes {
             return nil
         }
-        guard let message = NSMutableData(length: authenticatedCipherText.length - MacBytes) else {
+        guard let message = NSMutableData(length: authenticatedCipherText.count - MacBytes) else {
             return nil
         }
-        if crypto_box_open_easy_afternm(message.mutableBytesPtr(), authenticatedCipherText.bytesPtr(), CUnsignedLongLong(authenticatedCipherText.length), nonce.bytesPtr(), beforenm.bytesPtr()) != 0 {
+        if crypto_box_open_easy_afternm(message.mutableBytesPtr(), authenticatedCipherText.bytesPtr(), CUnsignedLongLong(authenticatedCipherText.count), nonce.bytesPtr(), beforenm.bytesPtr()) != 0 {
             return nil
         }
-        return message
+        return message as Data
     }
 
-    public func seal(message: NSData, beforenm: Beforenm) -> NSData? {
-        guard let (authenticatedCipherText, nonce): (NSData, Nonce) = seal(message: message, beforenm: beforenm) else {
+    open func seal(_ message: Data, beforenm: Beforenm) -> Data? {
+        guard let (authenticatedCipherText, nonce): (Data, Nonce) = seal(message, beforenm: beforenm) else {
             return nil
         }
         let nonceAndAuthenticatedCipherText = NSMutableData(data: nonce as Data)
         nonceAndAuthenticatedCipherText.append(authenticatedCipherText as Data)
-        return nonceAndAuthenticatedCipherText
+        return nonceAndAuthenticatedCipherText as Data
     }
     
-    public func seal(message: NSData, recipientPublicKey: Box.PublicKey) -> NSData? {
-        if recipientPublicKey.length != PublicKeyBytes {
+    open func seal(_ message: Data, recipientPublicKey: Box.PublicKey) -> Data? {
+        if recipientPublicKey.count != PublicKeyBytes {
             return nil
         }
-        guard let anonymousCipherText = NSMutableData(length: SealBytes + message.length) else {
+        guard let anonymousCipherText = NSMutableData(length: SealBytes + message.count) else {
             return nil
         }
-        if crypto_box_seal(anonymousCipherText.mutableBytesPtr(), message.bytesPtr(), CUnsignedLongLong(message.length), recipientPublicKey.bytesPtr()) != 0 {
+        if crypto_box_seal(anonymousCipherText.mutableBytesPtr(), message.bytesPtr(), CUnsignedLongLong(message.count), recipientPublicKey.bytesPtr()) != 0 {
             return nil
         }
-        return anonymousCipherText
+        return anonymousCipherText as Data
     }
     
-    public func open(anonymousCipherText: NSData, recipientPublicKey: PublicKey, recipientSecretKey: SecretKey) -> NSData? {
-        if recipientPublicKey.length != PublicKeyBytes || recipientSecretKey.length != SecretKeyBytes || anonymousCipherText.length < SealBytes {
+    open func open(_ anonymousCipherText: Data, recipientPublicKey: PublicKey, recipientSecretKey: SecretKey) -> Data? {
+        if recipientPublicKey.count != PublicKeyBytes || recipientSecretKey.count != SecretKeyBytes || anonymousCipherText.count < SealBytes {
             return nil
         }
-        let message = NSMutableData(length: anonymousCipherText.length - SealBytes)
+        let message = NSMutableData(length: anonymousCipherText.count - SealBytes)
         if message == nil {
             return nil
         }
-        if crypto_box_seal_open(message!.mutableBytesPtr(), anonymousCipherText.bytesPtr(), CUnsignedLongLong(anonymousCipherText.length), recipientPublicKey.bytesPtr(), recipientSecretKey.bytesPtr()) != 0 {
+        if crypto_box_seal_open(message!.mutableBytesPtr(), anonymousCipherText.bytesPtr(), CUnsignedLongLong(anonymousCipherText.count), recipientPublicKey.bytesPtr(), recipientSecretKey.bytesPtr()) != 0 {
             return nil
         }
-        return message
+        return message as Data?
     }
 }
