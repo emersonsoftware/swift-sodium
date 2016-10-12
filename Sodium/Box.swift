@@ -166,7 +166,7 @@ public class Box {
     
     public func curve25519(recipientPublicKey: PublicKey, senderSecretKey: SecretKey) -> NSData? {
         let key = NSMutableData(length: 32)
-        if crypto_scalarmult(key!.mutableBytesPtr, senderSecretKey.bytesPtr, recipientPublicKey.bytesPtr) != 0 {
+        if crypto_scalarmult(key!.mutableBytesPtr(), senderSecretKey.bytesPtr(), recipientPublicKey.bytesPtr()) != 0 {
             return nil
         }
         return key
