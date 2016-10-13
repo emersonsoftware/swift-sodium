@@ -180,12 +180,12 @@ open class Box {
         return (authenticatedCipherText: authenticatedCipherText as Data, nonce: nonce)
     }
     
-    public func curve25519(recipientPublicKey: PublicKey, senderSecretKey: SecretKey) -> NSData? {
+    public func curve25519(recipientPublicKey: PublicKey, senderSecretKey: SecretKey) -> Data? {
         let key = NSMutableData(length: 32)
         if crypto_scalarmult(key!.mutableBytesPtr(), senderSecretKey.bytesPtr(), recipientPublicKey.bytesPtr()) != 0 {
             return nil
         }
-        return key
+        return key as Data?
     }
     
     open func open(_ nonceAndAuthenticatedCipherText: Data, beforenm: Beforenm) -> Data? {
