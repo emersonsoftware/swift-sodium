@@ -30,8 +30,9 @@ public class SecretBox {
      */
     public func nonce() -> Nonce {
         var nonce = Data(count: NonceBytes)
+        let _nonce = nonce
         nonce.withUnsafeMutableBytes { noncePtr in
-            randombytes_buf(noncePtr, nonce.count)
+            randombytes_buf(noncePtr, _nonce.count)
         }
         return nonce
     }

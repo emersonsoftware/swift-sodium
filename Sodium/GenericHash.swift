@@ -48,6 +48,7 @@ public class GenericHash {
      */
     public func hash(message: Data, key: Data?, outputLength: Int) -> Data? {
         var output = Data(count: outputLength)
+        let _output = output
         var result: Int32 = -1
 
         if let key = key {
@@ -55,7 +56,7 @@ public class GenericHash {
                 message.withUnsafeBytes { messagePtr in
                     key.withUnsafeBytes { keyPtr in
                         crypto_generichash(
-                            outputPtr, output.count,
+                            outputPtr, _output.count,
                             messagePtr, CUnsignedLongLong(message.count),
                             keyPtr, key.count)
                     }
@@ -65,7 +66,7 @@ public class GenericHash {
             result = output.withUnsafeMutableBytes { outputPtr in
                 message.withUnsafeBytes { messagePtr in
                     crypto_generichash(
-                        outputPtr, output.count,
+                        outputPtr, _output.count,
                         messagePtr, CUnsignedLongLong(message.count),
                         nil, 0)
                 }
@@ -125,21 +126,21 @@ public class GenericHash {
 
     public class Stream {
         public var outputLength: Int = 0
-        private var state: UnsafeMutablePointer<crypto_generichash_state>?
+        private var opaqueState: OpaquePointer
+        private var state: UnsafeMutableRawPointer?
 
         init?(key: Data?, outputLength: Int) {
-            let rawState = UnsafeMutablePointer<UInt8>.allocate(capacity: crypto_generichash_statebytes())
-            state = UnsafeMutableRawPointer(rawState).bindMemory(to: crypto_generichash_state.self, capacity: 1)
-            guard let state = state else {
-                return nil
-            }
+            state = sodium_malloc(crypto_generichash_statebytes())
+            guard let opaqueState = OpaquePointer(state) else { return nil }
+            self.opaqueState = opaqueState
             var result: Int32 = -1
             if let key = key {
+                let _key = key
                 result = key.withUnsafeBytes { keyPtr in
-                    crypto_generichash_init(state, keyPtr, key.count, outputLength)
+                    crypto_generichash_init(opaqueState, keyPtr, _key.count, outputLength)
                 }
             } else {
-                result = crypto_generichash_init(state, nil, 0, outputLength)
+                result = crypto_generichash_init(opaqueState, nil, 0, outputLength)
             }
             if result != 0 {
                 free()
@@ -153,7 +154,7 @@ public class GenericHash {
                 return
             }
             let rawState = UnsafeMutableRawPointer(state).bindMemory(to: UInt8.self, capacity: crypto_generichash_statebytes())
-            rawState.deallocate(capacity: 1)
+            rawState.deallocate()
             self.state = nil
         }
 
@@ -170,7 +171,7 @@ public class GenericHash {
          */
         public func update(input: Data) -> Bool {
             return input.withUnsafeBytes { inputPtr in
-                crypto_generichash_update(state!, inputPtr, CUnsignedLongLong(input.count)) == 0
+                crypto_generichash_update(opaqueState, inputPtr, CUnsignedLongLong(input.count)) == 0
             }
         }
 
@@ -181,8 +182,9 @@ public class GenericHash {
          */
         public func final() -> Data? {
             var output = Data(count: outputLength)
+            let _output = output
             let result = output.withUnsafeMutableBytes { outputPtr in
-                crypto_generichash_final(state!, outputPtr, output.count)
+                crypto_generichash_final(opaqueState, outputPtr, _output.count)
             }
             if result != 0 {
                 return nil
