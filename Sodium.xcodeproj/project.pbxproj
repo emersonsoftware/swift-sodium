@@ -832,6 +832,7 @@
 		};
 		09A943DC1A4EB5F500C8A04F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A6F448CC24CCAE4F00344EF0 /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -962,6 +963,7 @@
 		};
 		09A943E21A4EB5F500C8A04F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A6F448CC24CCAE4F00344EF0 /* Config.xcconfig */;
 			buildSettings = {
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Tests/SodiumTests/Info.plist;
@@ -995,6 +997,7 @@
 		};
 		901644D41AE36EA800163E3E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A6F448CC24CCAE4F00344EF0 /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -1036,6 +1039,7 @@
 		};
 		901644F51AE36F2E00163E3E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A6F448CC24CCAE4F00344EF0 /* Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "-";
